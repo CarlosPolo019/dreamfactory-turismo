@@ -152,6 +152,7 @@ return [
         DreamFactory\Providers\ConfigServiceProvider::class,
         DreamFactory\Providers\EventServiceProvider::class,
         DreamFactory\Providers\RouteServiceProvider::class,
+	TechniSupport\DreamFactoryFirebase\Providers\DreamFactoryFirebaseProvider::class
     ],
     /*
     |--------------------------------------------------------------------------

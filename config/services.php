@@ -29,5 +29,12 @@ return [
     'stripe'   => [
         'model'  => 'User',
         'secret' => '',
-    ]
+    ],
+    'firebase' => [
+	'api_key' => env('FIREBASE_API_KEY','AIzaSyC5PJb9pDa05jY3WpiVmZx5txTcHVYtg0w'),
+	'auth_domain' => env('FIREBASE_AUTH_DOMAIN','airlinku-1e710.firebaseapp.com'),
+	'database_url' => env('FIREBASE_DATABASE_URL','https://airlinku-1e710.firebaseio.com'),
+	'storage_bucket' => env('FIREBASE_STORAGE_BUCKET','airlinku-1e710.appspot.com'),
+	'secret' => env('FIREBASE_SECRET','sJSALxYV0YIriVZmG40RufEAq1PCW7ugj8MyARxM')
+    ],
 ];

@@ -1,0 +1,6 @@
+#!/bin/bash
+cd /var/www/html/airlink
+php app/console cache:clear --env=prod
+php app/console cache:clear --env=dev
+chmod -Rf 777 app/logs/
+chmod -Rf 777 app/cache

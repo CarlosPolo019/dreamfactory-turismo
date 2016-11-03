@@ -1,0 +1,18 @@
+{
+    "name": "technisupport/df-authroles",
+    "description": "Handles user roles requirements for different apps",
+    "type": "library",
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Carlos Andraus",
+            "email": "candraus@technisupport.com"
+        }
+    ],
+    "autoload": {
+    	"psr-4": {
+    	    "TechniSupport\\DreamFactory\\AuthRoles\\": "src/"
+    	}
+    }
+}

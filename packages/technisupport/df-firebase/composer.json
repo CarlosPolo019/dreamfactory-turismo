@@ -1,0 +1,21 @@
+{
+    "name": "technisupport/df-firebase",
+    "description": "Syncs services response to firebase",
+    "type": "library",
+    "require": {
+        "partner-it/firebase-rest-php": "1.0.5"
+    },
+    "license": "MIT",
+    "minimum-stability": "dev",
+    "authors": [
+        {
+            "name": "Carlos Andraus",
+            "email": "candraus@technisupport.com"
+        }
+    ],
+    "autoload": {
+    	"psr-4": {
+    	    "TechniSupport\\DreamFactoryFirebase\\": "src/"
+    	}
+    }
+}

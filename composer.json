@@ -44,7 +44,11 @@
     "dreamfactory/df-couchdb":         "~0.3.0",
     "dreamfactory/df-rws":             "~0.3.0",
     "dreamfactory/df-user":            "~0.3.0",
-    "dreamfactory/df-oauth":           "~0.3.0"
+    "dreamfactory/df-oauth":           "~0.3.0",
+    "partner-it/firebase-rest-php": "^1.0",
+    "ktamas77/firebase-php": "^2.2",
+    "monolog/monolog": "^1.21",
+    "phpoffice/phpexcel": "^1.8"
   },
   "require-dev":       {
     "barryvdh/laravel-ide-helper": "~2.1",
@@ -61,7 +65,9 @@
       "database"
     ],
     "psr-4":    {
-      "DreamFactory\\": "app/"
+      "DreamFactory\\": "app/",
+      "TechniSupport\\DreamFactoryFirebase\\": "packages/technisupport/df-firebase/src/",
+      "TechniSupport\\DreamFactory\\AuthRoles\\": "packages/technisupport/df-authroles/src/"
     }
   },
   "autoload-dev":      {
