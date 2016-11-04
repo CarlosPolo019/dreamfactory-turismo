@@ -34,7 +34,7 @@ class AuthRoles
         $this->eventSubject= new EventSubject($dfPlatform,$dfEvent);
 
         $this->eventSubject->attach(new UsuarioAirlinkU());
-        $this->eventSubject->attach(new EntityDelete());
+        //$this->eventSubject->attach(new EntityDelete());
         $this->eventSubject->attach(new UsuarioObtener());
         $this->eventSubject->attach(new ConductorAirlinkU());
         $this->eventSubject->attach(new ReporteAirlinkU());
