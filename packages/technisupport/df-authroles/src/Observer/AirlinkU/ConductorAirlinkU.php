@@ -7,7 +7,7 @@ use TechniSupport\DreamFactory\AuthRoles\Subject\BaseSubject;
 use TechniSupport\DreamFactory\AuthRoles\Subject\EventSubject;
 
 /**
- * Class Usuario Maneja los eventos de creación de usuarios
+ * Class ConductorAirlinkU Maneja los eventos de creación de usuarios para los conductores
  *
  * @package TechniSupport\DreamFactory\AuthRoles\Observer\AirlinkU
  */
@@ -19,8 +19,7 @@ class ConductorAirlinkU extends BaseObserver
      * @param BaseSubject $subject_in
      * @return mixed
      */
-    function update(BaseSubject &$subject_in) {
-       //file_put_contents("/tmp/log.txt", json_encode("Creando conductor!!!!!!!"),FILE_APPEND );
+    function update(BaseSubject &$subject_in) {    
         /**
          * @var EventSubject $subject_in
          */
@@ -31,24 +30,24 @@ class ConductorAirlinkU extends BaseObserver
             if(isset($dfEvent["response"])) {
                 $this->postCreacionConductor($subject_in);
             }
+            else {
+                $this->preCreacionConductor($subject_in);      
+            }
         }
     }
 
     /**
      * @param BaseSubject $subject_in Sujeto generador de eventos
      */
-    function postCreacionConductor(BaseSubject &$subject_in) {
-        
+    function preCreacionConductor(BaseSubject &$subject_in) {
         /**
          * @var $subject_in EventSubject
          */
-
         $get = $subject_in->getDfPlatform()["api"]->get;
         $post = $subject_in->getDfPlatform()["api"]->post;
         $patch = $subject_in->getDfPlatform()["api"]->patch;
         $put = $subject_in->getDfPlatform()["api"]->put;
-        $payload = $subject_in->getDfEvent()["request"]["payload"]["resource"][0];        
-        $response = $subject_in->getDfEvent()["response"];
+        $payload = $subject_in->getDfEvent()["request"]["payload"]["resource"][0];      
 
         //CREANDO USUARIO PARA EL NUEVO CONDUCTOR
         $body = [];
@@ -61,8 +60,41 @@ class ConductorAirlinkU extends BaseObserver
             "password" => $payload["nro_documento"]
         ];
 
-        //AGREGANDO LOOKUP KEYS PARA EL USUARIO
-        $body["resource"][0]["user_lookup_by_user_id"] = [[
+        $result = $post("system/user", $body);
+        $user = $result["content"];
+   
+        if ($result["status_code"] == 500) {
+             throw new \Exception('Correo electronico "'.$payload["email"]." ya se encuentra registrado. Por favor intentelo de nuevo.");
+        } 
+    }
+
+    /**
+     * @param BaseSubject $subject_in Sujeto generador de eventos
+     */
+    function postCreacionConductor(BaseSubject &$subject_in) {        
+        /**
+         * @var $subject_in EventSubject
+         */  
+        $get = $subject_in->getDfPlatform()["api"]->get;
+        $post = $subject_in->getDfPlatform()["api"]->post;
+        $patch = $subject_in->getDfPlatform()["api"]->patch;
+        $put = $subject_in->getDfPlatform()["api"]->put;
+        $payload = $subject_in->getDfEvent()["request"]["payload"]["resource"][0];        
+        $response = $subject_in->getDfEvent()["response"];
+
+        //OBTENIENDO USUARIO DEL CONDUCTOR
+        $result1 = $get("system/user?fields=id&filter=".urlencode("email=".$payload["email"]));
+        $user = $result1["content"];        
+     
+        //AGREGANDO ROL AL USUARIO
+        $user["resource"][0]["user_to_app_to_role_by_user_id"] = [[
+            "user_id" =>  $user["resource"][0]["id"],
+            "app_id" => 10,
+            "role_id" => 9
+        ]];
+        
+        //AGREGANDO LOOKUP-KEYS PARA EL USUARIO
+        $user["resource"][0]["user_lookup_by_user_id"] = [[
             "name"=>"id_conductor",
             "value"=>$response["content"]["resource"][0]["id"],
             "private"=>false,
@@ -74,26 +106,11 @@ class ConductorAirlinkU extends BaseObserver
             "allow_user_update"=>false,
         ]];
 
-        $result1 = $post("system/user", $body);
-        $user = $result1["content"];
-
-        $result2 = $get("system/user?fields=id&filter=".urlencode("email=".$payload["email"]));
-        $user = $result2["content"];
-
-        $user["resource"][0]["user_to_app_to_role_by_user_id"] = [[
-            "user_id" =>  $user["resource"][0]["id"],
-            "app_id" => 10,
-            "role_id" => 9
-        ]];
-
         $res = $put("system/user",$user);
         
         //ACTUALIZANDO CONDUCTOR CON EL USER_ID
-
         $result2 = $patch("airlinku/_table/conductor/".$response["content"]["resource"][0]["id"], [ "user_id" => $user["resource"][0]["id"] ]);
         $conductor = $result2["content"];
-        
-        //file_put_contents("/tmp/log.txt", json_encode($conductor),FILE_APPEND);
     }
 
     /**

@@ -8,7 +8,7 @@ use TechniSupport\DreamFactory\AuthRoles\Subject\EventSubject;
 use Excel;
 
 /**
- * Class UsuarioObtener Maneja los eventos de los Usuarios
+ * Class ReporteAirlinkU maneja los eventos de la generacion de reportes
  *
  * @package TechniSupport\DreamFactory\AuthRoles\Observer\AirlinkU
  */
@@ -20,55 +20,48 @@ class ReporteAirlinkU extends BaseObserver
      * @param BaseSubject $subject_in
      * @return mixed
      */
-    function update(BaseSubject &$subject_in)
-    {
+    function update(BaseSubject &$subject_in) {
         /**
          * @var EventSubject $subject_in
          */
-
         $dfEvent = $subject_in->getDfEvent();
         
         if($subject_in->getServicio()=="reportes") {
-           
-            $session=$subject_in->getDfPlatform()["session"];
-            $event=$subject_in->getDfEvent();
-            
-            //if(!$session["user"]["is_sys_admin"]) {
-                
-                $params = $subject_in->getDfEvent()['request']['parameters'];
 
-                if(!isset($params["tipo"])) {
-                    $event["response"]["status_code"] = 404;
-                    $event["response"]["content"]["error"] = "Falta parametro tipo";
+            $session = $subject_in->getDfPlatform()["session"];
+            $event = $subject_in->getDfEvent();
+                
+            $params = $subject_in->getDfEvent()['request']['parameters'];
+
+            if(!isset($params["tipo"])) {
+                $event["response"]["status_code"] = 404;
+                $event["response"]["content"]["error"] = "Falta parametro tipo";
+            }
+            else {                    
+                switch($params["tipo"]){
+                    case "servicios": 
+                    case "movimientos":
+                    case "obtener_movimientos_caja":
+                    case "obtener_historial_pasajero":
+                    case "obtener_listado_servicios":
+                    case "obtener_movimientos_caja":
+                    case "obtener_servicios_conductor":
+                        $event["response"]["content"]=$this->generarReporte($subject_in, $params["tipo"]);
+                        break; 
+                    default:
+                        $event["response"]["status_code"] = 404;
+                        $event["response"]["content"]["error"] = "Parametro invalido";
                 }
-                else {                    
-                    switch($params["tipo"]){
-                        case "servicios": 
-                        case "movimientos":
-                        case "obtener_movimientos_caja":
-                        case "obtener_historial_pasajero":
-                        case "obtener_listado_servicios":
-                        case "obtener_movimientos_caja":
-                        case "obtener_servicios_conductor":
-                            $event["response"]["content"]=$this->generarReporte($subject_in, $params["tipo"]);
-                            break; 
-                        default:
-                            $event["response"]["status_code"] = 404;
-                            $event["response"]["content"]["error"] = "Parametro invalido";
-                    }
-                }
-            //}
+            }
 
             $subject_in->setDfEvent($event);
         }
     }
 
-
     /**
      * @param BaseSubject $subject_in     
      */
-    private function generarReporte(BaseSubject &$subject_in, $tipo)
-    {
+    private function generarReporte(BaseSubject &$subject_in, $tipo) {
         /**
          * @var EventSubject $subject_in
          */
@@ -174,7 +167,7 @@ class ReporteAirlinkU extends BaseObserver
             $funcion = $get("airlinku/_proc/".$tipo, ["params" =>$params]);            
             $funcionResult = $funcion["content"];                
             $reporteInfo = array_keys($funcionResult[0]);
-            //file_put_contents("/tmp/reporte.log", json_encode($funcionResult), FILE_APPEND ); exit;
+           
             if ($reporteInfo == null) { $reporteInfo = ["No se encontró información disponible para este reporte."]; }
 
             $excel->getActiveSheet()->fromArray($reporteInfo, null, "A1");
@@ -197,8 +190,9 @@ class ReporteAirlinkU extends BaseObserver
             header("Access-Control-Allow-Origin: *");
             $tmpFile = '/tmp/reporte'.rand(10000,99999).'.xlsx';
             $writer->save($tmpFile);
-            $content = base64_encode(file_get_contents($tmpFile));      
+            $content = base64_encode(file_get_contents($tmpFile));   
             echo $content; 
+            exit; 
         }
     }
 
@@ -206,8 +200,7 @@ class ReporteAirlinkU extends BaseObserver
      * Retorna el id del observador
      * @return string
      */
-    function id()
-    {
+    function id() {
         return md5(__NAMESPACE__.__CLASS__);
     }
 }

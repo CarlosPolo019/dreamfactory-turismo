@@ -48,7 +48,8 @@
     "partner-it/firebase-rest-php": "^1.0",
     "ktamas77/firebase-php": "^2.2",
     "monolog/monolog": "^1.21",
-    "phpoffice/phpexcel": "^1.8"
+    "phpoffice/phpexcel": "^1.8",
+    "twilio/sdk": "^5.4"
   },
   "require-dev":       {
     "barryvdh/laravel-ide-helper": "~2.1",
