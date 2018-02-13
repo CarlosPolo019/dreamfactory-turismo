@@ -49,7 +49,8 @@
     "ktamas77/firebase-php": "^2.2",
     "monolog/monolog": "^1.21",
     "phpoffice/phpexcel": "^1.8",
-    "twilio/sdk": "^5.4"
+    "twilio/sdk": "^5.4",
+    "nategood/httpful": "^0.2.20"
   },
   "require-dev":       {
     "barryvdh/laravel-ide-helper": "~2.1",
@@ -68,7 +69,8 @@
     "psr-4":    {
       "DreamFactory\\": "app/",
       "TechniSupport\\DreamFactoryFirebase\\": "packages/technisupport/df-firebase/src/",
-      "TechniSupport\\DreamFactory\\AuthRoles\\": "packages/technisupport/df-authroles/src/"
+      "TechniSupport\\DreamFactory\\AuthRoles\\": "packages/technisupport/df-authroles/src/",
+      "TechniSupport\\DreamFactory\\TPaga\\": "packages/technisupport/df-tpaga/src/"
     }
   },
   "autoload-dev":      {
