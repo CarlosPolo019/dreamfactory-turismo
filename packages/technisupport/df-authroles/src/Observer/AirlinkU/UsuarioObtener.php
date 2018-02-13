@@ -5,7 +5,7 @@ use TechniSupport\DreamFactory\AuthRoles\Events\Event;
 use TechniSupport\DreamFactory\AuthRoles\Observer\BaseObserver;
 use TechniSupport\DreamFactory\AuthRoles\Subject\BaseSubject;
 use TechniSupport\DreamFactory\AuthRoles\Subject\EventSubject;
-
+use \Datetime;
 /**
  * Class UsuarioObtener Maneja los eventos de los Usuarios
  *
@@ -42,7 +42,8 @@ class UsuarioObtener extends BaseObserver
                         $event["response"]["content"]["error"] = "Falta parámetro tipo";
                     }else{
                         $lookup = $session["lookup"];
-                        $id_universidad = $lookup["id_universidad"]*1;
+                        //file_put_contents("/var/www/html/airlinku-df2/storage/logs/auobtener.log", json_encode($lookup), FILE_APPEND );
+			$id_universidad = $lookup["id_universidad"]*1;
                         $id_usuario = $lookup["id_usuario"]*1;
                         switch($params["tipo"]){
                             case "servicio":
@@ -215,11 +216,13 @@ class UsuarioObtener extends BaseObserver
             ],[
                 "name"  =>'p_id_direccion_destino',
                 "value" => $params["id_direccion_destino"]
+            ],[
+                "name"  =>'p_fechahora',
+                "value" => $params["fechahora"]
             ]
         ];
-
-        $content=$post("airlinku/_func/obtener_servicios", ["params" =>$params]);
-
+        $content=$post("airlinku/_proc/obtener_servicios_log", ["params" =>$params]);
+	$content=$post("airlinku/_func/obtener_servicios", ["params" =>$params]);
         //file_put_contents("/tmp/auobtener.log", json_encode($subject_in->getDfPlatform()["session"]["lookup"]), FILE_APPEND );
         $content = ["resource" =>json_decode($content["content"])];
         return $content;
@@ -234,7 +237,8 @@ class UsuarioObtener extends BaseObserver
         /**
          * @var EventSubject $subject_in
          */
-        $post=$subject_in->getDfPlatform()["api"]->get;
+        $post=$subject_in->getDfPlatform()["api"]->post;
+        $get=$subject_in->getDfPlatform()["api"]->get;
         $subject_in->getDfEvent()["response"]["content"]["resource"]="id_usuario";
         $params = $subject_in->getDfEvent()['request']['parameters'];
         $payload = $subject_in->getDfEvent()['request']["payload"];
@@ -271,7 +275,26 @@ class UsuarioObtener extends BaseObserver
        // file_put_contents("/tmp/auobtener.log", json_encode($content), FILE_APPEND );
         $content = ["resource" =>$content["content"]];
         // $content = ["resource" =>[$id_usuario,$id_universidad,$id_servicio,$id_direccion]];
-        return $content;
+        
+	//SE ENVÍA EL CORREO DE NOTIFICACIÓN DE LA RESERVA
+	$servicioData=$get("airlinku/_table/servicio/".$id_servicio."?fields=inicio_recogida_esperado")["content"];
+	$usuarioData=$get("airlinku/_table/usuario/".$id_usuario."?fields=id%2Cprimer_nombre&related=user")["content"];
+	$date = new DateTime($servicioData["inicio_recogida_esperado"]);
+	$EmailParams=[
+		"to" => [
+		    [
+		        "name" => $usuarioData["primer_nombre"],
+		        "email" => $usuarioData["user"]["email"]
+		        ]
+		    ],
+		    "first_name" => $usuarioData["primer_nombre"],
+		    "servicio_id" => "".$id_servicio,
+		    "dia_servicio" => $date->format('Y-m-d'),
+		    "hora_servicio" => $date->format('H:i')
+	];
+	$EmailCrearReserva=$post("email?template=AirlinkU_Notificar_Servicio_Reservado",$EmailParams);
+	//FIN - ENVÍO DE CORREO
+	return $content;
     }
 
 
@@ -284,7 +307,8 @@ class UsuarioObtener extends BaseObserver
         /**
          * @var EventSubject $subject_in
          */
-        $post=$subject_in->getDfPlatform()["api"]->get;
+        $post=$subject_in->getDfPlatform()["api"]->post;
+        $get=$subject_in->getDfPlatform()["api"]->get;
         $subject_in->getDfEvent()["response"]["content"]["resource"]="id_usuario";
         $params = $subject_in->getDfEvent()['request']['parameters'];
         $payload = $subject_in->getDfEvent()['request']["payload"];
@@ -313,7 +337,28 @@ class UsuarioObtener extends BaseObserver
         // file_put_contents("/tmp/auobtener.log", json_encode($content), FILE_APPEND );
         $content = ["resource" =>$content["content"]];
         // $content = ["resource" =>[$id_usuario,$id_universidad,$id_servicio,$id_direccion]];
-        return $content;
+        
+        //SE ENVÍA EL CORREO DE NOTIFICACIÓN DE LA CANCELACIÓN DE LA RESERVA
+        $reservaData=$get("airlinku/_table/reserva/".$id_reserva."?fields=id_servicio")["content"]; 
+	$usuarioData=$get("airlinku/_table/usuario/".$id_usuario."?fields=id%2Cprimer_nombre&related=user")["content"];
+        $servicioData=$get("airlinku/_table/servicio/".$reservaData["id_servicio"]."?fields=inicio_recogida_esperado")["content"];
+        $date = new DateTime($servicioData["inicio_recogida_esperado"]);
+        $EmailParams=[
+                "to" => [
+                    [
+                        "name" => $usuarioData["primer_nombre"],
+                        "email" => $usuarioData["user"]["email"]
+                        ]
+                    ],
+                    "first_name" => $usuarioData["primer_nombre"],
+                    "servicio_id" => "".$reservaData["id_servicio"],
+                    "dia_servicio" => $date->format('Y-m-d'),
+                    "hora_servicio" => $date->format('H:i')
+        ];
+        $EmailCrearReserva=$post("email?template=AirlinkU_Notificar_Reserva_Cancelada",$EmailParams);
+        //FIN - ENVÍO DE CORREO
+
+	return $content;
     }
 
     /**
