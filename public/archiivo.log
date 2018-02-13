@@ -1,0 +1,111 @@
+
+<?php /*NUEVO ARCHIVO */
+$resources = [];
+$data = $event["response"]["content"]["resource"];
+
+foreach($data as $datum){
+    $resource=[];
+    foreach($datum as $key=>$field){
+        if(in_array($key,["id","first_name","last_name","email"])){
+            $resource[$key]=$field;
+        }
+    }
+    
+    $resources[]=$resource;
+}
+
+$event["response"]["content"]["resource"] = $resources;
+
+error_log(var_export($event,true));
+
+<?php /*NUEVO ARCHIVO */
+$resources = [];
+$data = $event["response"]["content"]["resource"];
+
+foreach($data as $datum){
+    $resource=[];
+    foreach($datum as $key=>$field){
+        if(in_array($key,["id","first_name","last_name","email"])){
+            $resource[$key]=$field;
+        }
+    }
+    
+    $resources[]=$resource;
+}
+
+$event["response"]["content"]["resource"] = $resources;
+
+error_log(var_export($event,true));
+
+<?php /*NUEVO ARCHIVO */
+<?php
+
+$api = $platform['api'];
+$patch = $api->patch;
+$get = $api->get;
+$logPath = "/var/www/html/airlinku-df2/storage/logs/dreamfactoryCustom.log";
+$allowSoftDelete = false;
+
+$data=[];
+$data["eliminado"]=date("Y-m-d h:i:s");
+$data["eliminado_por"]=$platform["session"]["user"]["id"];
+//file_put_contents($logPath, json_encode("Deleting...."),FILE_APPEND );
+//file_put_contents($logPath, json_encode($event),FILE_APPEND );
+//file_put_contents($logPath, json_encode("Deleting...."),FILE_APPEND );
+$tabla = explode("/",$event["resource"])[0];
+$entityID = explode("/",$event["resource"])[1];
+$errorStr = "";
+$separador = "--";
+switch($tabla){
+	case "caja":
+		$content = $get("airlinku/_table/".$event["resource"])["content"];
+		$estado = $content["estado"];
+		if(!$estado){
+			$allowSoftDelete = true;
+		}else{
+			$errorStr.= $separador."caja_abierta";
+			throw new \Exception($errorStr);
+		}
+		break;
+	case "direccion":
+		/* 
+			VERIFICAR SI LA DIRECCION SE ESTÁ USANDO
+			VER LOS SERVICIOS PROGRAMADOS Y EN CURSO DEL USUARIO.
+			GET EN RESERVA. SI LA RESERVA ESTÁ EN UN ESTADO DIFERENTE A NUEVA, ES PORQUE LA DIRECCIÓN SE ESTÁ USANDO
+		*/
+		$resourceReserva = $get("airlinku/_table/reserva?filter=(eliminado is null)and(id_direccion%3D".$entityID.")and(estado%3D0)")["content"]["resource"];
+		if(count($resourceReserva) === 0){
+			$allowSoftDelete = true;
+		}else{
+		}
+		break;
+    case "ubicacion":
+        /* 
+			VERIFICAR SI LA UBICACION SE ESTÁ USANDO            
+		*/
+
+		$ubicacionesEnUso = $get("airlinku/_table/servicio?filter=(eliminado is null)and((id_ubicacion_origen%3D".$entityID.")or(id_ubicacion_destino%3D".$entityID."))")["content"]["resource"];
+        if(count($ubicacionesEnUso) === 0){
+			$allowSoftDelete = true;
+		}else{
+			$errorStr.= $separador."ubicacion_en_uso";
+			throw new \Exception($errorStr);
+		}
+		break;
+	default:
+		$allowSoftDelete = true;
+		break;
+}
+
+if($allowSoftDelete){
+	$content = $patch("airlinku/_table/".$event["resource"], $data);
+	//header("Access-Control-Allow-Origin:*");
+	$errorStr.= $separador."ok";
+	throw new \Exception($errorStr);
+}
+exit;
+
+
+<?php /*NUEVO ARCHIVO */
+//$sync=new \TechniSupport\DreamFactoryFirebase\FirebaseSync($platform,$event,$payload,"airlinku");
+//$sync->sync();

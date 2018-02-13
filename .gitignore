@@ -2,11 +2,6 @@
 .vagrant
 vendor
 .idea
-/public/pma
-/public/dreamfactory
-/public/df-admin-app
-/public/filemanager
-/public/df-swagger-ui
 /workbench
 composer.phar
 _ide_helper.php
