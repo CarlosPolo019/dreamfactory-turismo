@@ -21,3 +21,4 @@ afterScriptLog.txt
 composer.json-*
 .env-bak
 node_modules
+/public/excels/*

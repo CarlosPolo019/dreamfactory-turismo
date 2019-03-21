@@ -239,6 +239,7 @@ class UsuarioObtener extends BaseObserver
          */
         $post=$subject_in->getDfPlatform()["api"]->post;
         $get=$subject_in->getDfPlatform()["api"]->get;
+	$patch=$subject_in->getDfPlatform()["api"]->patch;
         $subject_in->getDfEvent()["response"]["content"]["resource"]="id_usuario";
         $params = $subject_in->getDfEvent()['request']['parameters'];
         $payload = $subject_in->getDfEvent()['request']["payload"];
@@ -271,30 +272,36 @@ class UsuarioObtener extends BaseObserver
         ];
 
         $content=$post("airlinku/_proc/crear_reserva", ["params" =>$params]);
-
-       // file_put_contents("/tmp/auobtener.log", json_encode($content), FILE_APPEND );
+	$now = new DateTime();
+	file_put_contents(storage_path()."/logs/ReservarServicio.log", json_encode("[".$now->format('d-M-Y h:m:s')."]Reservando Servicio..."),FILE_APPEND );
+        $reservaId=$content["content"][0]["id_reserva"];
         $content = ["resource" =>$content["content"]];
-        // $content = ["resource" =>[$id_usuario,$id_universidad,$id_servicio,$id_direccion]];
-        
-	//SE ENVÍA EL CORREO DE NOTIFICACIÓN DE LA RESERVA
-	$servicioData=$get("airlinku/_table/servicio/".$id_servicio."?fields=inicio_recogida_esperado")["content"];
-	$usuarioData=$get("airlinku/_table/usuario/".$id_usuario."?fields=id%2Cprimer_nombre&related=user")["content"];
-	$date = new DateTime($servicioData["inicio_recogida_esperado"]);
-	$EmailParams=[
-		"to" => [
-		    [
-		        "name" => $usuarioData["primer_nombre"],
-		        "email" => $usuarioData["user"]["email"]
-		        ]
-		    ],
-		    "first_name" => $usuarioData["primer_nombre"],
-		    "servicio_id" => "".$id_servicio,
-		    "dia_servicio" => $date->format('Y-m-d'),
-		    "hora_servicio" => $date->format('H:i')
-	];
-	$EmailCrearReserva=$post("email?template=AirlinkU_Notificar_Servicio_Reservado",$EmailParams);
-	//FIN - ENVÍO DE CORREO
-	return $content;
+        //SE ENVÍA EL CORREO DE NOTIFICACIÓN DE LA RESERVA
+        $servicioData=$get("airlinku/_table/servicio/".$id_servicio."?fields=inicio_recogida_esperado")["content"];
+        $usuarioData=$get("airlinku/_table/usuario/".$id_usuario."?fields=id%2Cprimer_nombre%2Cemail%2Cid_universidad")["content"];
+        $reservaData=$get("airlinku/_table/reserva/".$reservaId."?fields=id_servicio%2Cid_usuario%2Ccreado")["content"];
+	$QRcode = md5($reservaData["id_servicio"]."-".$reservaId."-".$id_usuario."-".$usuarioData["id_universidad"]."-".$reservaData["creado"]);
+	$patchResponse = $patch("airlinku/_table/reserva/".$reservaId,[ "qr" => strtoupper($QRcode) ]);
+        $reservaData=$get("airlinku/_table/reserva/".$reservaId."?fields=id%2Cqr")["content"];
+        $date = new DateTime($servicioData["inicio_recogida_esperado"]);
+        if($reservaId != NULL){
+        	$EmailParams=[
+	                "to" => [
+	                    [
+	                        "name" => $usuarioData["primer_nombre"],
+	                        "email" => $usuarioData["email"]
+	                        ]
+	                    ],
+	                    "first_name" => $usuarioData["primer_nombre"],
+	                    "servicio_id" => "".$id_servicio,
+	                    "dia_servicio" => $date->format('Y-m-d'),
+	                    "hora_servicio" => $date->format('H:i'),
+	                    "qr" => substr("".$reservaData["qr"],-4)
+	        ];
+	        $EmailCrearReserva=$post("email?template=AirlinkU_Notificar_Servicio_Reservado",$EmailParams);
+        //FIN - ENVÍO DE CORREO
+        }
+        return $content;
     }
 
 

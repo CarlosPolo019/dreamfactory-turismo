@@ -16,7 +16,8 @@ class Kernel extends ConsoleKernel
         'DreamFactory\Console\Commands\ADGroupImport',
         'DreamFactory\Console\Commands\HomesteadConfig',
         'DreamFactory\Console\Commands\ServiceTypeMigrate',
-        'DreamFactory\Console\Commands\Hhvm',
+	'DreamFactory\Console\Commands\Hhvm',
+	'\DreamFactory\Console\Commands\CheckNequiActivity'
     ];
 
     //******************************************************************************
