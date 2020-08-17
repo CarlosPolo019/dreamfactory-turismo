@@ -63,7 +63,7 @@ class UsuarioAirlinkU extends BaseObserver
                 $dominioMail = $partesMail[1];
                 
                 if(!in_array($dominioMail, $dominiosArr)) {
-                    throw new \Exception("Correo no valido");
+                //   throw new \Exception("Correo no valido");
                 }
             }
         }  
@@ -107,7 +107,8 @@ class UsuarioAirlinkU extends BaseObserver
                     "telefono"          =>  $payload["phone"],
                     "id_universidad"    =>  $idUniversidad,
                     "user_id"           =>  $user["resource"][0]["id"],
-                    "codigo"            =>  $code
+		    "codigo"            =>  $code,
+		    "correo_contacto"   =>  $payload["correo_contacto"] 		
                 ];
 
                 $content = $post("airlinku/_table/usuario",$body);

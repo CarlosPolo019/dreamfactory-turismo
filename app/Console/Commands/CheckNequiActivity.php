@@ -42,7 +42,7 @@ public function handle()
     {
        $apiKey="1af7dde94da21c28f5795956b78e6d87bf61e2d86bdf313723613a3b2d8cd564";
         $nequiMovimientos = DB::table('airlink_u.nequi_movimiento')
-            ->select('id', 'user_id', 'valor', 'transactionId')
+            ->select('id','user_id' ,'creado_por', 'valor', 'transactionId')
             ->where('estado', 1)
             ->whereNull('eliminado')
             ->whereNull('eliminado_por')
@@ -52,17 +52,19 @@ public function handle()
 
         $id=$nequiMovimiento->id;
         $valor=$nequiMovimiento->valor;
-        $user_id=$nequiMovimiento->user_id;
+	$usuario=$nequiMovimiento->creado_por;
+	$user_id=$nequiMovimiento->user_id;
+	$code=$nequiMovimiento->transactionId;
 
         $payload = [
             'action' => 'verificar_push',
-            'user_id' => $nequiMovimiento->user_id ,
+            'user_id' => $nequiMovimiento->creado_por,
             'transactionId' => $nequiMovimiento->transactionId ];
 
 
 
          $headers = [
-            "Accept" => "application/json",
+           "Accept" => "application/json",
             "Content-Type" => "application/json",
             "X-Dreamfactory-API-Key" => $apiKey
         ];
@@ -79,55 +81,85 @@ public function handle()
             if ($status){
                 if ($status === "35"){
                     //pago aprobado
-                    $status = 2;
-                }else if($status === "0"){
+			$status = 2;
+		$this->actualizarPago($code,$usuario,$status,$valor,$user_id);
+                }else if($status === "3"){
                     //Rechazaron el pago
-                    $status = 3;
-                }
-                $this->actualizarPago($id,$user_id,$status,$valor);
+			$status = 3;
+		$this->actualizarPago($code,$usuario,$status,$valor,$user_id);
+		}else{
+		
+		
+		}
+             //$this->actualizarPago($code,$usuario,$status,$valor,$user_id);
             }
 
         }
     }
 
- private function actualizarPago($id,$user_id,$status,$valor){
+ private function actualizarPago($code,$user_id,$status,$valor,$user){
 
         switch ($status) {
             case 2:
                   $userContent = DB::table('airlink_u.usuario')
-                    ->where('user_id', $user_id)
+                    ->where('id', $user_id)
                     ->first();
 
                 DB::table('airlink_u.nequi_movimiento')
-                    ->where('id', $id)
+                    ->where('transactionId', $code)
                     ->update(['estado' => 2]);
+
+	$valorprom = 0;	  	
+
+	if ($valor < 45000){
+	$valorprom = $valor;
+	}else{
+	$valorprom = $valor*1.3;
+	}
 
 
                 DB::table('airlink_u.movimiento')->insert([
-                    [
-                        'id_usuario' => $userContent->id,
-                        'id_tipo_movimiento' => 1,
-                        'valor' => $valor,
+                   [
+                        'id_usuario' => $user_id,
+                        'id_tipo_movimiento' => 9,
+                        'valor' => $valorprom,
                         'medio_pago' => 'D',
                         'estado' => 1,
-                        'creado_por'=> 1,
-                        'actualizado_por'=> 1
+                        'creado_por'=>  $userContent->id,
+                        'actualizado_por'=>  $userContent->id
                     ]
-                ]);
-                $this->enviarNotificacion($userContent->id, $valor);
+	    ]);
 
-            break;
+		  $body="Se ha recargado la cuenta con $".$valorprom;
+		   $this->enviarNotificacion($user_id,$body);
+		//$this->notificacionesIOS($user_id,$body);
+		break;
+	case 3:
+                  $userContent = DB::table('airlink_u.usuario')
+                    ->where('id', $user_id)
+                    ->first();
+
+                DB::table('airlink_u.nequi_movimiento')
+                    ->where('transactionId', $code)
+                    ->update(['estado' => 3]);
+
+	$body="La transacción ha sido cancelada o rechazada";
+
+              $this->enviarNotificacion($user_id, $body);
+		// $this->notificacionesIOS($user_id,$body);
+
+        	break;
         }
  }
 
- private function enviarNotificacion($user_id, $valor){
+ private function enviarNotificacion($user_id, $body){
         $usuario = DB::table('airlink_u.usuario')
             ->where('id', $user_id)
             ->first();
         $user_token = $usuario->firebase_token;
 
         $title="Recarga Nequi";
-        $body="Se ha recargado la cuenta con $".$valor;
+      //  $body="Se ha recargado la cuenta con $".$valor;
 
          $headers = '{
                           "to": "'.$user_token.'"';
@@ -157,5 +189,45 @@ public function handle()
         /*FINAL DE CURL PARA ENVIAR LA NOTIFICACIÓN PUSH*/
 
 
+ } 
+
+ private function notificacionesIOS ($user_id,$body) {
+	$ch=curl_init("https://fcm.googleapis.com/fcm/send");
+
+$usuario = DB::table('airlink_u.usuario')
+            ->where('id', $user_id)
+            ->first();
+        $token = $usuario->firebase_token;
+
+        $title="Recarga Nequi";
+
+	$notificacion = array('title' => $title,'text' => $body);
+
+	$arrayToSend = array('to'=>$token,'notification'=>$notificacion ,'priority' => 'high');
+
+	$json = json_encode($arrayToSend);
+
+	$headers = array();
+
+	$headers[] = 'Content-Type: application/json';
+
+	$headers[]= 'Authorization: Key='."AAAAXySWgPI:APA91bFoqqBFKwH0k4Vgwsl7c12yDzSkeQ0kVsd8MOZuNwrwAluh4vcK0cHMlwLd2R5PFrUviu_N-ZMPCz7gGQen9k3uxmExqa7SK_yX1_v7D5TZIKtenNKf_Q_67as459W5GNPc2CEL";
+
+	curl_setopt($ch,CURLOPT_CUSTOMREQUEST,"POST");
+	curl_setopt($ch,CURLOPT_POSTFIELDS,$json);
+	curl_setopt($ch,CURLOPT_HTTPHEADER,$headers);
+	
+	// Send the request
+	$response=curl_exec($ch);
+
+	curl_close($ch);
+
+	return $response;	
+
  }
+
+
+
+
+
 }

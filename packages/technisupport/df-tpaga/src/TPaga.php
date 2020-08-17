@@ -42,7 +42,7 @@ class TPaga {
         switch ($operacion) {
             case "listartarjeta":
                 if($metodo=="GET") Eventos\ListarTarjeta::evento($this->platform,$this->event);
-                break;
+		break;
             case "listar":
                 if($metodo=="GET") Eventos\ListarTransacciones::evento($this->platform,$this->event);
                 break;

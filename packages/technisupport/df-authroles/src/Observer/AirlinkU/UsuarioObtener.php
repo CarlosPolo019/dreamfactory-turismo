@@ -1,7 +1,6 @@
 <?php
 namespace TechniSupport\DreamFactory\AuthRoles\Observer\AirlinkU;
 
-use TechniSupport\DreamFactory\AuthRoles\Events\Event;
 use TechniSupport\DreamFactory\AuthRoles\Observer\BaseObserver;
 use TechniSupport\DreamFactory\AuthRoles\Subject\BaseSubject;
 use TechniSupport\DreamFactory\AuthRoles\Subject\EventSubject;
@@ -221,7 +220,7 @@ class UsuarioObtener extends BaseObserver
                 "value" => $params["fechahora"]
             ]
         ];
-        $content=$post("airlinku/_proc/obtener_servicios_log", ["params" =>$params]);
+       $content=$post("airlinku/_proc/obtener_servicios_log", ["params" =>$params]);
 	$content=$post("airlinku/_func/obtener_servicios", ["params" =>$params]);
         //file_put_contents("/tmp/auobtener.log", json_encode($subject_in->getDfPlatform()["session"]["lookup"]), FILE_APPEND );
         $content = ["resource" =>json_decode($content["content"])];
@@ -254,7 +253,30 @@ class UsuarioObtener extends BaseObserver
         }else{
             $id_direccion = $payload["id_direccion"]*1;
         }
-        $params = [
+  /*      $params = [
+            [
+                "name"  => 'p_id_universidad',
+                "value" => $id_universidad
+            ],
+            [
+                "name"  => 'p_id_usuario',
+                "value" => $id_usuario
+            ],[
+                "name"  =>'p_id_servicio',
+                "value" => $id_servicio
+            ],[
+                "name"  =>'p_id_direccion',
+                "value" => $id_direccion
+            ]
+    ];*/
+
+
+
+$content = "Prueba" ;
+
+        if(!isset($payload["estado"])) {
+
+$params = [
             [
                 "name"  => 'p_id_universidad',
                 "value" => $id_universidad
@@ -271,7 +293,40 @@ class UsuarioObtener extends BaseObserver
             ]
         ];
 
-        $content=$post("airlinku/_proc/crear_reserva", ["params" =>$params]);
+ $content=$post("airlinku/_proc/crear_reserva", ["params" =>$params]);
+
+        }else{
+
+$params = [
+            [
+                "name"  => 'p_id_universidad',
+                "value" => $id_universidad
+            ],
+            [
+                "name"  => 'p_id_usuario',
+                "value" => $id_usuario
+            ],[
+                "name"  =>'p_id_servicio',
+                "value" => $id_servicio
+            ],[
+                "name"  =>'p_id_direccion',
+                "value" => $id_direccion
+            ],[
+                "name"  =>'p_latitud',
+                "value" => $payload["latitud"]
+            ],[
+                "name"  =>'p_longitud',
+                "value" => $payload["longitud"]
+            ]
+        ];
+
+// return true ;
+
+ $content=$post("airlinku/_proc/crear_reserva2", ["params" =>$params]);
+
+        }
+
+    //    $content=$post("airlinku/_proc/crear_reserva", ["params" =>$params]);
 	$now = new DateTime();
 	file_put_contents(storage_path()."/logs/ReservarServicio.log", json_encode("[".$now->format('d-M-Y h:m:s')."]Reservando Servicio..."),FILE_APPEND );
         $reservaId=$content["content"][0]["id_reserva"];
@@ -324,8 +379,17 @@ class UsuarioObtener extends BaseObserver
             throw new \Exception("Falta parametro id_reserva");
         }else{
             $id_reserva = $params["id_reserva"]*1;
-        }
-        $params = [
+	}
+
+
+	if(!isset($params["mensaje"]) || is_nan($params["mensaje"])) {
+            throw new \Exception("Falta parametro mensaje");
+        }else{
+            $mensaje = $params["mensaje"];
+	}
+
+	
+       $params = [
             [
                 "name"  => 'p_id_universidad',
                 "value" => $id_universidad
@@ -336,6 +400,9 @@ class UsuarioObtener extends BaseObserver
             ],[
                 "name"  =>'p_id_reserva',
                 "value" => $id_reserva
+            ],[
+                "name"  =>'p_mensaje',
+                "value" => $mensaje
             ]
         ];
 
@@ -348,6 +415,7 @@ class UsuarioObtener extends BaseObserver
         //SE ENVÍA EL CORREO DE NOTIFICACIÓN DE LA CANCELACIÓN DE LA RESERVA
         $reservaData=$get("airlinku/_table/reserva/".$id_reserva."?fields=id_servicio")["content"]; 
 	$usuarioData=$get("airlinku/_table/usuario/".$id_usuario."?fields=id%2Cprimer_nombre&related=user")["content"];
+	$usuarioDataAp=$get("airlinku/_table/usuario/".$id_usuario."?fields=id%2Cprimer_apellido&related=user")["content"];
         $servicioData=$get("airlinku/_table/servicio/".$reservaData["id_servicio"]."?fields=inicio_recogida_esperado")["content"];
         $date = new DateTime($servicioData["inicio_recogida_esperado"]);
         $EmailParams=[
@@ -363,8 +431,22 @@ class UsuarioObtener extends BaseObserver
                     "hora_servicio" => $date->format('H:i')
         ];
         $EmailCrearReserva=$post("email?template=AirlinkU_Notificar_Reserva_Cancelada",$EmailParams);
-        //FIN - ENVÍO DE CORREO
+	//FIN - ENVÍO DE CORREO
+	//INICIO CORREO SUPERVISOR
 
+	 $EmailSupervisorParams=[
+                "to" => [
+                    [
+                        "name" => $usuarioData["primer_nombre"],
+                        "email" => "soporte@vanana.com"
+                        ]
+                    ],
+                    "nombre_usuario" => $usuarioData["primer_nombre"]." ".$usuarioDataAp["primer_apellido"],
+                    "servicio_id" => "".$reservaData["id_servicio"],
+                    "mensaje" => $mensaje ];
+	$EmailNotificarSupervisor=$post("email?template=Vanana_Notificar_Supervisor_Reserva_Cancelada",$EmailSupervisorParams);
+	// FIN - ENVIO DE CORREO SUPERVISOR
+	
 	return $content;
     }
 

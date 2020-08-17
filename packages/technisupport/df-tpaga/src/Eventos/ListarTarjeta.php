@@ -41,7 +41,9 @@ class ListarTarjeta extends  EventoBase {
                     ];
                 }
                 header("Content-Type: application/json");
-                echo json_encode($cards);exit;
+		
+		
+	    echo json_encode($cards);exit;
             }
         }
 
