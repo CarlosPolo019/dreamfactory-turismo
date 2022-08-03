@@ -48,14 +48,14 @@ class UsuarioAirlinkU extends BaseObserver
         if($subject_in->getDfPlatform()["session"]["role"]["name"] == "AIRLINKU_ANONIMO") {
             $get = $subject_in->getDfPlatform()["api"]->get;
             $payload = $subject_in->getDfEvent()["request"]["payload"];
-            $idUniversidad = $payload["id_universidad"];
+           $idUniversidad = 13 ; //$payload["id_universidad"];
             $email = $payload["email"];
 
             if(!$idUniversidad || is_nan($idUniversidad)) {
                 throw new \Exception("Debe seleccionar universidad");
             }
             else {
-                $result = $get("airlinku/_table/universidad/$idUniversidad?fields=dominios");
+             /*  $result = $get("airlinku/_table/universidad/$idUniversidad?fields=dominios");
                 $content = $result["content"];              
                 $dominios = $content["dominios"];
                 $dominiosArr = explode(",", $dominios);
@@ -64,7 +64,7 @@ class UsuarioAirlinkU extends BaseObserver
                 
                 if(!in_array($dominioMail, $dominiosArr)) {
                 //   throw new \Exception("Correo no valido");
-                }
+                } */
             }
         }  
     }
@@ -84,9 +84,10 @@ class UsuarioAirlinkU extends BaseObserver
             $put = $subject_in->getDfPlatform()["api"]->put;
             $payload = $subject_in->getDfEvent()["request"]["payload"];
             $response = $subject_in->getDfEvent()["response"];
-            $idUniversidad = $payload["id_universidad"];
-            $idTipoDocumento = $payload["id_tipo_documento"];
-            $nroDocumento = $payload["nro_documento"];
+           $idUniversidad = 13; //$payload["id_universidad"];
+          // $idTipoDocumento = $payload["id_tipo_documento"];
+          //  $nroDocumento = $payload["nro_documento"];
+	
 
             if(!$idUniversidad || is_nan($idUniversidad)) {
                 throw new \Exception("Debe proporcionar universidad");
@@ -99,8 +100,8 @@ class UsuarioAirlinkU extends BaseObserver
                 $body["resource"] = [];
 
                 $body["resource"][] = [
-                    "id_tipo_documento" =>  $idTipoDocumento,
-                    "nro_documento"     =>  $nroDocumento,
+                  //  "id_tipo_documento" =>  $idTipoDocumento,
+                  //  "nro_documento"     =>  $nroDocumento,
                     "nombres"           =>  $payload["first_name"]." ".$payload["last_name"],
                     "primer_nombre"     =>  $payload["first_name"],
                     "primer_apellido"   =>  $payload["last_name"],
@@ -111,13 +112,20 @@ class UsuarioAirlinkU extends BaseObserver
 		    "correo_contacto"   =>  $payload["correo_contacto"] 		
                 ];
 
-                $content = $post("airlinku/_table/usuario",$body);
+        	// $content = $post("airlinku/_table/usuario",$body);
+	
+              //  $idUsuario = $content["content"]["resource"][0]["id"];
 
-                $idUsuario = $content["content"]["resource"][0]["id"];
+		$idUsuario = 0;
+
+              // $content = $get("airlinku/_table/usuario?filter=(user_id={$user["resource"][0]["id"]})");
+	// file_put_contents("/tmp/log.txt", json_encode($content),FILE_APPEND );	
+
+              // $idUsuario = $content["content"]["resource"][0]["id"];
 
                 $user["resource"][0]["user_lookup_by_user_id"] = [[
                     "name"=>"id_usuario",
-                    "value"=>$idUsuario,
+                    "value"=> $idUsuario,
                     "private"=>false,
                     "allow_user_update"=>false,
                 ],[
@@ -127,27 +135,28 @@ class UsuarioAirlinkU extends BaseObserver
                     "allow_user_update"=>false,
                 ]];
                 
-                $user["resource"][0]["is_active"] = 0;
+                $user["resource"][0]["is_active"] = 1;
                 $user["resource"][0]["confirm_code"] = $code;
                 $user["resource"][0]["user_to_app_to_role_by_user_id"] = [[
                     "user_id" =>  $user["resource"][0]["id"],
-                    "app_id" => 11,
-                    "role_id" => 10
+                    "app_id" => 6,
+                    "role_id" => 9
                 ]];
 
                 $res = $put("system/user",$user);
 
-                $result=$post("email?template_id=5",[
+               $result=$post("email?template_id=26",[
                     "to" => [
-                        "name" => $payload["first_name"]." ".$payload["last_name"],
+                        "name" => $payload["first_name"],
                         "email" => $payload["email"]
                     ],
                     "first_name" => $payload["first_name"],
                     "confirm_code" => $code
                 ]);
             }
-            //file_put_contents("/tmp/log.txt", json_encode([$result,$code]),FILE_APPEND );
-            $idUsuario=$content["content"]["resource"][0]["id"];
+    //      file_put_contents("/tmp/log.txt", json_encode([$result,$code]),FILE_APPEND );
+          //  $idUsuario = $content["content"]["resource"][0]["id"];
+		$idUsuario = 0;
         }
         else if($subject_in->getDfPlatform()["session"]["role"]["name"] == "AIRLINKU_ADMIN") {
 
@@ -209,6 +218,7 @@ class UsuarioAirlinkU extends BaseObserver
             $idUniversidad = $payload["id_universidad"];
             $idUbicacion = $payload["id_ubicacion"];
             $idEmpresa = $payload["id_empresa"];
+	    $idRole = $payload["id_role"];
             $rolId = $payload["role_id"];
             $idUniversidad = $subject_in->getDfPlatform()["session"]["lookup"]["id_universidad"]; 
       
@@ -225,6 +235,7 @@ class UsuarioAirlinkU extends BaseObserver
                     "id_universidad" =>  $idUniversidad,
                     "id_ubicacion"   =>  $idUbicacion,
                     "id_empresa"     =>  $idEmpresa,
+		    "id_role"	     =>  $idRole,
                     "user_id"        =>  $user["resource"][0]["id"]
                 ];
  
@@ -245,7 +256,7 @@ class UsuarioAirlinkU extends BaseObserver
 
                 $user["resource"][0]["user_to_app_to_role_by_user_id"] = [[
                     "user_id" =>  $user["resource"][0]["id"],
-                    "app_id" => 9,
+                    "app_id" => 4,
                     "role_id" => $payload["role_id"]
                 ]];
 

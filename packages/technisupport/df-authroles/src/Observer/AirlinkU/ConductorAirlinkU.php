@@ -57,7 +57,7 @@ class ConductorAirlinkU extends BaseObserver
             "email" => $payload["email"],
             "name" => $payload["primer_nombre"]." ".$payload["primer_apellido"], 
             "username" => $payload["email"],  
-            "password" => $payload["nro_documento"]
+            "password" => $payload["telefono"]
         ];
 
         $result = $post("system/user", $body);
@@ -89,8 +89,8 @@ class ConductorAirlinkU extends BaseObserver
         //AGREGANDO ROL AL USUARIO
         $user["resource"][0]["user_to_app_to_role_by_user_id"] = [[
             "user_id" =>  $user["resource"][0]["id"],
-            "app_id" => 10,
-            "role_id" => 9
+            "app_id" => 5,
+            "role_id" => 8
         ]];
         
         //AGREGANDO LOOKUP-KEYS PARA EL USUARIO

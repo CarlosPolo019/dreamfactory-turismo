@@ -17,6 +17,7 @@ class Kernel extends ConsoleKernel
         'DreamFactory\Console\Commands\HomesteadConfig',
         'DreamFactory\Console\Commands\ServiceTypeMigrate',
 	'DreamFactory\Console\Commands\Hhvm',
+	Commands\CheckReservas::class,
 	'\DreamFactory\Console\Commands\CheckNequiActivity'
     ];
 
